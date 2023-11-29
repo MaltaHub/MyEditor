@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import filedialog
+#Meu Editor de texto/código
 
 class Editor:
     def __init__(self, root):
