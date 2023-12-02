@@ -1,48 +1,103 @@
 import tkinter as tk
-from tkinter import scrolledtext
-from tkinter import filedialog
-#Meu Editor de texto/código
+from tkinter import messagebox
 
-class Editor:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Editor do Kaic!")
+def salvar_nota():
+    global nota_selecionada
+    nota_atual = texto.get("1.0", "end-1c")
+    if nota_atual:
+        notas[nota_selecionada] = nota_atual
 
-        self.text_area = scrolledtext.ScrolledText(self.root, wrap=tk.WORD, width=80, height=20)
-        self.text_area.pack(expand=True, fill='both')
+def nova_nota():
+    global nota_selecionada
+    salvar_nota()
+    notas.append("")
+    nota_selecionada = len(notas) - 1
+    atualizar_lista_notas()
 
-        self.text_area.config(font=("Arial", 12, "bold"))  # Altera a fonte para Arial, tamanho 1
+def excluir_nota():
+    global nota_selecionada
+    if nota_selecionada != -1:
+        del notas[nota_selecionada]
+        atualizar_lista_notas()
+        if nota_selecionada >= len(notas):
+            nota_selecionada = len(notas) - 1
+        selecionar_nota()
 
-        menu_bar = tk.Menu(self.root)
-        self.root.config(menu=menu_bar)
+def selecionar_nota(event=None):
+    index = lista_notas.nearest(event.y)
+    item_selecionado = lista_notas.get(index)
+    print("Item selecionado antes da mudança:", item_selecionado)
 
-        file_menu = tk.Menu(menu_bar, tearoff=0)
-        menu_bar.add_cascade(label="Menu", menu=file_menu)
-        file_menu.add_command(label="Novo", command=self.new_file)
-        file_menu.add_command(label="Abrir", command=self.open_file)
-        file_menu.add_command(label="Salvar", command=self.save_file)
-        file_menu.add_separator()
-        file_menu.add_command(label="Sair", command=self.root.destroy)
+    if texto.get("1.0", "end-1c") != notas[index]:
+        print("Texto igual!")
+        return
 
-    def new_file(self):
-        self.text_area.delete(1.0, tk.END)
+    global nota_selecionada
+    index = lista_notas.curselection()
 
-    def open_file(self):
-        file_path = filedialog.askopenfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
-        if file_path:
-            with open(file_path, 'r') as file:
-                content = file.read()
-                self.text_area.delete(1.0, tk.END)
-                self.text_area.insert(tk.END, content)
+    if nota_selecionada != -1:
+        nota_atual = texto.get("1.0", "end-1c")
+        if nota_atual != notas[nota_selecionada]:
+            resposta = messagebox.askyesno("Salvar Alterações", "Deseja salvar as alterações?")
+            if resposta:
+                salvar_nota()
 
-    def save_file(self):
-        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
-        if file_path:
-            with open(file_path, 'w') as file:
-                content = self.text_area.get(1.0, tk.END)
-                file.write(content)
+    if index:
+        nota_selecionada = int(index[0])
+        texto.delete("1.0", tk.END)
+        texto.insert(tk.END, notas[nota_selecionada])
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = Editor(root)
-    root.mainloop()
+def atualizar_lista_notas():
+    lista_notas.delete(0, tk.END)
+    for i, _ in enumerate(notas):
+        lista_notas.insert(tk.END, f"Nota {i+1}")
+
+def alteracao_nota(event=None):
+    global nota_selecionada
+    #if nota_selecionada != -1:
+    #    nota_atual = texto.get("1.0", "end-1c")
+    #    if nota_atual != notas[nota_selecionada]:
+    #        resposta = messagebox.askyesno("Salvar Alterações", "Deseja salvar as alterações?")
+    #        if resposta:
+    #            salvar_nota()
+
+root = tk.Tk()
+root.title("Editor de Notas")
+root.geometry("600x400")
+
+notas = [""]
+nota_selecionada = -1
+
+frame = tk.Frame(root)
+frame.pack(side=tk.LEFT, fill=tk.Y)
+
+lista_notas = tk.Listbox(frame)
+lista_notas.pack(fill=tk.Y)
+#lista_notas.bind("<<ListboxSelect>>", selecionar_nota)
+lista_notas.bind("<Button-1>", selecionar_nota)
+
+scrollbar = tk.Scrollbar(root)
+scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+notebook = tk.Frame(root)
+notebook.pack(fill=tk.BOTH, expand=True)
+
+texto = tk.Text(notebook, wrap="word", yscrollcommand=scrollbar.set)
+texto.pack(fill=tk.BOTH, expand=True)
+texto.bind("<KeyRelease>", alteracao_nota)
+
+scrollbar.config(command=texto.yview)
+
+botoes_frame = tk.Frame(frame)
+botoes_frame.pack(fill=tk.X)
+
+btn_nova_nota = tk.Button(botoes_frame, text="Nova Nota", command=nova_nota)
+btn_nova_nota.pack(fill=tk.X)
+
+btn_excluir_nota = tk.Button(botoes_frame, text="Excluir Nota", command=excluir_nota)
+btn_excluir_nota.pack(fill=tk.X)
+
+btn_salvar = tk.Button(botoes_frame, text="Salvar", command=salvar_nota)
+btn_salvar.pack(fill=tk.X)
+
+root.mainloop()
